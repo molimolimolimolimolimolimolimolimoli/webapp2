@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1c1e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Shiny odds calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Material 3 color roles: neutral base, three accent hues (violet, green, orange) ---------- */
+  :root {
+    --md-sys-color-primary:#1c1c1e; --md-sys-color-on-primary:#ffffff;
+    --md-sys-color-primary-container:#e4e4e6; --md-sys-color-on-primary-container:#1c1c1e;
+    --md-sys-color-secondary:#5c5c60; --md-sys-color-on-secondary:#ffffff;
+    --md-sys-color-secondary-container:#e4e4e6; --md-sys-color-on-secondary-container:#1c1c1e;
+    --md-sys-color-tertiary:#5c5c60; --md-sys-color-on-tertiary:#ffffff;
+    --md-sys-color-tertiary-container:#e4e4e6; --md-sys-color-on-tertiary-container:#1c1c1e;
+    --md-sys-color-surface:#f9f9fa; --md-sys-color-on-surface:#1c1c1e; --md-sys-color-on-surface-variant:#5c5c60;
+    --md-sys-color-surface-variant:#e4e4e6;
+    --md-sys-color-outline:#8a8a8e; --md-sys-color-outline-variant:#cfcfd2;
+    --md-sys-color-error:#ba1a1a; --md-sys-color-shadow:#000; --md-sys-color-scrim:#000;
+    --sc:#efeff0; --sch:#e4e4e6; --schh:#d9d9dc;
+    --shiny:#6d4aff; --shiny-c:#e6dfff; --on-shiny-c:#1d0b66;
+    --hundo:#0b8a5c; --hundo-c:#c6f0dd; --on-hundo-c:#00301f;
+    --bgc:#d9480f;   --bgc-c:#ffd9c7;   --on-bgc-c:#4a1500;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --md-sys-color-primary:#f2f2f3; --md-sys-color-on-primary:#1c1c1e;
+      --md-sys-color-primary-container:#38383b; --md-sys-color-on-primary-container:#f2f2f3;
+      --md-sys-color-secondary:#b4b4b8; --md-sys-color-on-secondary:#1c1c1e;
+      --md-sys-color-secondary-container:#38383b; --md-sys-color-on-secondary-container:#f2f2f3;
+      --md-sys-color-tertiary:#b4b4b8; --md-sys-color-on-tertiary:#1c1c1e;
+      --md-sys-color-tertiary-container:#38383b; --md-sys-color-on-tertiary-container:#f2f2f3;
+      --md-sys-color-surface:#101011; --md-sys-color-on-surface:#e8e8ea; --md-sys-color-on-surface-variant:#b4b4b8;
+      --md-sys-color-surface-variant:#38383b;
+      --md-sys-color-outline:#8e8e92; --md-sys-color-outline-variant:#424245;
+      --md-sys-color-error:#ffb4ab;
+      --sc:#1a1a1c; --sch:#242426; --schh:#2e2e31;
+      --shiny:#b3a2ff; --shiny-c:#3a2a99; --on-shiny-c:#e6dfff;
+      --hundo:#4fd8a1; --hundo-c:#0c4a33; --on-hundo-c:#c6f0dd;
+      --bgc:#ff9a66;   --bgc-c:#6b2a0b;   --on-bgc-c:#ffd9c7;
+      color-scheme: dark;
+    }
+  }
+  :root {
+    --primary:var(--md-sys-color-primary); --on-primary:var(--md-sys-color-on-primary);
+    --surface:var(--md-sys-color-surface); --on:var(--md-sys-color-on-surface); --on-var:var(--md-sys-color-on-surface-variant);
+    --error:var(--md-sys-color-error);
+    --spring:cubic-bezier(0.34,1.56,0.64,1);
+    --md-ref-typeface-brand:"Roboto Flex"; --md-ref-typeface-plain:"Roboto Flex";
+  }
+  @property --md-filled-tonal-button-container-shape { syntax:"<length>"; inherits:true; initial-value:14px; }
+  @property --md-fab-container-shape { syntax:"<length>"; inherits:true; initial-value:18px; }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--surface); color:var(--on); font:1rem/1.5 "Roboto Flex",system-ui,-apple-system,"Segoe UI",sans-serif; font-optical-sizing:auto; }
+  main { max-width:760px; margin:0 auto; padding:max(16px, env(safe-area-inset-top)) 16px 80px; }
+  .tnum { font-variant-numeric:tabular-nums; }
+  .headline { font-size:1.75rem; line-height:1.2; font-weight:700; font-variation-settings:"wdth" 110; margin:44px 8px 14px; }
+  .body-s { font-size:.875rem; color:var(--on-var); }
+  .dot { display:inline-block; width:.6em; height:.6em; border-radius:50%; margin-right:.35em; background:var(--on-var); }
+  .dot.s { background:var(--shiny); } .dot.h { background:var(--hundo); } .dot.b { background:var(--bgc); }
+
+  /* first screen fills the viewport exactly, so nothing below peeks in */
+  .fold { display:flex; flex-direction:column; min-height:calc(100vh - max(16px, env(safe-area-inset-top))); min-height:calc(100svh - max(16px, env(safe-area-inset-top))); padding-bottom:max(16px, env(safe-area-inset-bottom)); }
+  .fold .hero { flex:1 1 auto; }
+  /* ---------- hero ---------- */
+  .hero { position:relative; overflow:hidden; background:var(--sch); border-radius:56px 56px 20px 20px; padding:32px 28px 26px; min-height:270px; display:flex; flex-direction:column; justify-content:flex-end; }
+  .hero svg { position:absolute; color:var(--shiny); }
+  .hero .s1 { width:150px; right:-14px; top:-10px; animation:spin 40s linear infinite; }
+  .hero .s2 { width:52px; right:150px; top:112px; opacity:.5; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .hero .lbl { font-size:1rem; font-weight:500; color:var(--on-var); }
+  .display { font-size:clamp(3.6rem,17vw,6.5rem); line-height:.98; font-weight:800; font-variation-settings:"wdth" 120; letter-spacing:-.03em; margin:0 0 14px; color:var(--shiny); }
+  .hero .pair { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; font-size:1.25rem; font-weight:600; font-variation-settings:"wdth" 110; }
+
+  /* ---------- cards ---------- */
+  .card { background:var(--sc); border-radius:32px; padding:20px; }
+  .settings { margin-top:12px; border-radius:20px 20px 48px 48px; padding:24px 20px 22px; }
+  .grp { margin:0 4px 12px; font-weight:600; font-variation-settings:"wdth" 108; }
+  .fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .total-tries { margin:12px 4px 0; color:var(--on-var); font-size:.9rem; }
+  .total-tries b { color:var(--on); }
+  .sep { height:1px; background:var(--md-sys-color-outline-variant); margin:22px 4px; }
+
+  md-outlined-text-field {
+    width:100%;
+    --md-outlined-text-field-container-shape:16px;
+    --md-outlined-text-field-input-text-font:"Roboto Flex",system-ui,sans-serif;
+    --md-outlined-text-field-label-text-font:"Roboto Flex",system-ui,sans-serif;
+    --md-outlined-text-field-input-text-color:var(--on);
+    --md-outlined-text-field-input-text-prefix-color:var(--on-var);
+  }
+
+  /* connected button group: selected button morphs to a pill with a spring */
+  .group { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:16px; }
+  md-filled-tonal-button.preset {
+    flex:1 1 160px;
+    --md-filled-tonal-button-container-height:52px;
+    --md-filled-tonal-button-container-shape:14px;
+    --md-filled-tonal-button-container-color:var(--schh);
+    --md-filled-tonal-button-label-text-color:var(--on-var);
+    --md-filled-tonal-button-hover-label-text-color:var(--on-var);
+    --md-filled-tonal-button-focus-label-text-color:var(--on-var);
+    --md-filled-tonal-button-pressed-label-text-color:var(--on-var);
+    --md-filled-tonal-button-label-text-font:"Roboto Flex",system-ui,sans-serif;
+    --md-filled-tonal-button-label-text-weight:600;
+    transition:--md-filled-tonal-button-container-shape 350ms var(--spring);
+  }
+  md-filled-tonal-button.preset[data-selected] {
+    --md-filled-tonal-button-container-shape:26px;
+    --md-filled-tonal-button-container-color:var(--primary);
+    --md-filled-tonal-button-label-text-color:var(--on-primary);
+    --md-filled-tonal-button-hover-label-text-color:var(--on-primary);
+    --md-filled-tonal-button-focus-label-text-color:var(--on-primary);
+    --md-filled-tonal-button-pressed-label-text-color:var(--on-primary);
+  }
+  md-filled-tonal-button.preset:active { --md-filled-tonal-button-container-shape:10px; }
+
+  md-fab {
+    --md-fab-container-shape:18px;
+    --md-fab-label-text-font:"Roboto Flex",system-ui,sans-serif; --md-fab-label-text-weight:600;
+    --md-fab-primary-container-color:var(--primary);
+    --md-fab-primary-icon-color:var(--on-primary);
+    --md-fab-primary-label-text-color:var(--on-primary);
+    --md-fab-primary-hover-icon-color:var(--on-primary);
+    --md-fab-primary-focus-icon-color:var(--on-primary);
+    --md-fab-primary-pressed-icon-color:var(--on-primary);
+    transition:--md-fab-container-shape 350ms var(--spring);
+  }
+  md-fab:active { --md-fab-container-shape:28px; }
+  md-icon { --md-icon-size:24px; } md-icon svg { fill:currentColor; }
+  md-icon-button { --md-icon-button-icon-color:var(--on-var); }
+
+  /* ---------- result list: segmented, corners change by position ---------- */
+  ul.list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .item {
+    --c-bg:var(--sc); --c-fg:var(--on); --c-accent:var(--on-var);
+    background:var(--c-bg); color:var(--c-fg); border-radius:8px; padding:16px 20px 18px;
+    display:grid; grid-template-columns:1fr auto; gap:4px 16px; align-items:end;
+    transition:border-radius 300ms var(--spring);
+  }
+  .item:first-child { border-radius:32px 32px 8px 8px; }
+  .item:last-child { border-radius:8px 8px 32px 32px; }
+  .item:hover { border-radius:24px; }
+  .item.shiny { --c-bg:var(--shiny-c); --c-fg:var(--on-shiny-c); --c-accent:var(--shiny); }
+  .item.hundo { --c-accent:var(--hundo); }
+  .item.bgonly { --c-accent:var(--bgc); }
+  .item .name { grid-column:1; font-weight:600; }
+  .item .odds { grid-column:1; font-size:1.75rem; font-weight:700; line-height:1.1; font-variation-settings:"wdth" 112; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .item .odds small { font-size:.8125rem; font-weight:400; opacity:.75; margin-left:8px; letter-spacing:0; }
+  .stats { display:flex; gap:20px; }
+  .item .stats { grid-column:2; grid-row:1/span 2; text-align:right; }
+  .stat { display:flex; flex-direction:column; font-variant-numeric:tabular-nums; }
+  .stat .k { font-size:.75rem; opacity:.75; } .stat .v { font-size:1.25rem; font-weight:600; }
+  md-linear-progress.bar {
+    grid-column:1/-1; width:100%; margin-top:10px;
+    --md-linear-progress-track-height:10px; --md-linear-progress-active-indicator-height:10px;
+    --md-linear-progress-track-shape:5px; --md-linear-progress-active-indicator-shape:5px;
+    --md-linear-progress-active-indicator-color:var(--c-accent);
+    --md-linear-progress-track-color:color-mix(in srgb,var(--c-fg) 14%,transparent);
+  }
+  @media (max-width:520px) { .item { grid-template-columns:1fr; } .item .stats { grid-column:1; grid-row:auto; text-align:left; margin-top:8px; } }
+
+  /* ---------- totals ---------- */
+  .totals { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .total { padding:20px 22px; }
+  .total .name { font-weight:600; }
+  .total .odds { font-size:1.5rem; font-weight:700; font-variation-settings:"wdth" 112; margin:2px 0 10px; line-height:1.1; }
+  .total.t1 { background:var(--shiny-c); color:var(--on-shiny-c); border-radius:40px 12px 40px 12px; }
+  .total.t2 { background:var(--hundo-c); color:var(--on-hundo-c); border-radius:12px 40px 12px 40px; }
+  .total.t3 { background:var(--bgc-c); color:var(--on-bgc-c); border-radius:40px 12px 40px 12px; }
+  .headrow { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:44px 8px 14px; }
+  .headrow .headline { margin:0; }
+  md-filled-tonal-button.copy {
+    --md-filled-tonal-button-container-height:44px;
+    --md-filled-tonal-button-container-shape:14px;
+    --md-filled-tonal-button-container-color:var(--schh);
+    --md-filled-tonal-button-label-text-color:var(--on);
+    --md-filled-tonal-button-hover-label-text-color:var(--on);
+    --md-filled-tonal-button-focus-label-text-color:var(--on);
+    --md-filled-tonal-button-pressed-label-text-color:var(--on);
+    --md-filled-tonal-button-icon-color:var(--on);
+    --md-filled-tonal-button-label-text-font:"Roboto Flex",system-ui,sans-serif;
+    --md-filled-tonal-button-label-text-weight:600;
+    transition:--md-filled-tonal-button-container-shape 350ms var(--spring);
+  }
+  md-filled-tonal-button.copy:active { --md-filled-tonal-button-container-shape:22px; }
+  .note { margin:14px 8px 0; color:var(--on-var); font-size:.875rem; max-width:62ch; }
+
+  /* ---------- calculator ---------- */
+  .calc { border-radius:48px 48px 20px 20px; padding:24px 20px; }
+  .factors { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .factor { display:flex; gap:8px; align-items:center; }
+  .factor md-outlined-text-field { flex:1; min-width:0; width:auto; }
+  .times { flex:none; width:32px; height:32px; display:grid; place-items:center; border-radius:50%; background:var(--schh); color:var(--on); font-weight:700; }
+  .times.first { visibility:hidden; }
+  .calcrow { display:flex; gap:12px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+  .calcrow md-outlined-text-field { width:170px; }
+  .result { margin-top:12px; background:var(--primary); color:var(--on-primary); border-radius:20px 20px 48px 48px; padding:28px 24px 24px; }
+  .result .big { font-size:clamp(2.4rem,11vw,4rem); font-weight:800; line-height:1; font-variation-settings:"wdth" 118; letter-spacing:-.02em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  .result .sub { margin:6px 0 18px; opacity:.75; }
+  .pills { display:flex; gap:8px; flex-wrap:wrap; }
+  .pill { background:color-mix(in srgb,var(--on-primary) 14%,transparent); border-radius:20px; padding:10px 16px; display:flex; flex-direction:column; font-variant-numeric:tabular-nums; }
+  .pill .k { font-size:.75rem; opacity:.8; } .pill .v { font-size:1.25rem; font-weight:700; }
+  .result:has(.err) { background:var(--sc); color:var(--on); }
+  .err { color:var(--error); font-weight:500; }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="fold">
+  <section class="hero" aria-live="polite">
+    <svg class="s1" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M50 0C54 30 70 46 100 50C70 54 54 70 50 100C46 70 30 54 0 50C30 46 46 30 50 0Z"/></svg>
+    <svg class="s2" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M50 0C54 30 70 46 100 50C70 54 54 70 50 100C46 70 30 54 0 50C30 46 46 30 50 0Z"/></svg>
+    <div class="lbl">Chance of at least 1 shiny</div>
+    <h1 class="display tnum" id="sChance">0%</h1>
+    <div class="pair"><span class="tnum" id="sExp">0</span><span class="body-s">shinies expected</span></div>
+  </section>
+
+  <section class="card settings" aria-label="Settings">
+    <p class="grp">How many tries?</p>
+    <div class="fields">
+      <md-outlined-text-field id="accounts" label="Accounts" type="number" inputmode="numeric" min="1" step="1" value="137"></md-outlined-text-field>
+      <md-outlined-text-field id="per" label="Tries per account" type="number" inputmode="numeric" min="1" step="1" value="1"></md-outlined-text-field>
+    </div>
+    <p class="total-tries">Total: <b class="tnum" id="totalTries">137</b> tries</p>
+    <div class="sep"></div>
+    <p class="grp" id="presetLabel">Where is the shiny from?</p>
+    <div class="group" role="group" aria-labelledby="presetLabel">
+      <md-filled-tonal-button class="preset" data-shiny="20" aria-pressed="true">Raid, 1 in 20</md-filled-tonal-button>
+      <md-filled-tonal-button class="preset" data-shiny="64" aria-pressed="false">Stamp rally, 1 in 64</md-filled-tonal-button>
+    </div>
+    <div class="fields">
+      <md-outlined-text-field id="shiny" label="Shiny" prefix-text="1 in " type="number" inputmode="decimal" min="1" step="any" value="20"></md-outlined-text-field>
+      <md-outlined-text-field id="hundo" label="Hundo" prefix-text="1 in " type="number" inputmode="decimal" min="1" step="any" value="216"></md-outlined-text-field>
+      <md-outlined-text-field id="bg" label="Background" prefix-text="1 in " type="number" inputmode="decimal" min="1" step="any" value="5"></md-outlined-text-field>
+    </div>
+  </section>
+  </div>
+
+  <h2 class="headline">Totals</h2>
+  <div class="totals" id="totals"></div>
+  <p class="note">Any shiny includes shundos and shiny backgrounds. The same goes for the others.</p>
+
+  <div class="headrow">
+    <h2 class="headline">Every result</h2>
+    <md-filled-tonal-button class="copy" id="copyBtn">
+      <md-icon slot="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></md-icon>
+      <span id="copyLabel">Copy for Discord</span>
+    </md-filled-tonal-button>
+  </div>
+  <ul class="list" id="rows"></ul>
+  <p class="note">Each result is exclusive, so a plain hundo means not shiny and no background. All results add up to 100%.</p>
+
+  <h2 class="headline">Multiply odds</h2>
+  <section class="card calc" aria-label="Multiply odds">
+    <p class="body-s" style="margin:0">Type each odds as 1/20, 20, 5% or 0.05. A plain number of 1 or more counts as 1 in that number.</p>
+    <div class="factors" id="factors"></div>
+    <div class="calcrow">
+      <md-fab id="addFactor" variant="primary" label="Add odds" aria-label="Add odds">
+        <md-icon slot="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></md-icon>
+      </md-fab>
+      <md-outlined-text-field id="tries" label="Tries" type="number" inputmode="numeric" min="1" step="1" value="137"></md-outlined-text-field>
+    </div>
+  </section>
+  <div class="result" id="result" aria-live="polite"></div>
+
+</main>
+
+<script type="module">
+  /* Material Web components (Material 3, Lit-based) */
+  import "https://esm.run/@material/web@2.3.0/all.js";
+</script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  /* Material Web fields upgrade after load, so fall back to the attribute until then */
+  const val = (el) => (el.value !== undefined ? el.value : el.getAttribute("value"));
+
+  function fmtNum(x) {
+    if (x >= 10) return x.toFixed(1);
+    if (x >= 1) return x.toFixed(2);
+    if (x >= 0.01) return x.toFixed(3);
+    if (x === 0) return "0";
+    return x.toPrecision(2);
+  }
+  function fmtPct(p) {
+    const v = p * 100;
+    if (v >= 100) return "100%";
+    if (v > 99.95) return ">99.9%";
+    if (v >= 10) return v.toFixed(1) + "%";
+    if (v >= 1) return v.toFixed(2) + "%";
+    if (v >= 0.01) return v.toFixed(3) + "%";
+    if (v === 0) return "0%";
+    if (v < 0.0001) return v.toExponential(1) + "%";
+    return v.toPrecision(2) + "%";
+  }
+  function fmtOneIn(p) {
+    if (p <= 0) return "never";
+    const x = 1 / p;
+    if (x >= 100) return "1 in " + Math.round(x).toLocaleString("en-US");
+    return "1 in " + (Math.round(x * 10) / 10).toString();
+  }
+  function atLeastOne(p, n) {
+    if (p >= 1) return 1;
+    if (p <= 0) return 0;
+    return -Math.expm1(n * Math.log1p(-p));
+  }
+
+  /* select the whole number on focus so typing replaces it */
+  document.addEventListener("focusin", (e) => {
+    if (e.target.matches("md-outlined-text-field") && typeof e.target.select === "function") e.target.select();
+  });
+
+  /* ---------- main odds ---------- */
+  function readSettings() {
+    const num = (id, fb) => { const v = parseFloat(val($(id))); return isFinite(v) && v > 0 ? v : fb; };
+    const accounts = Math.max(1, Math.floor(num("accounts", 1)));
+    const per = Math.max(1, Math.floor(num("per", 1)));
+    return {
+      n: accounts * per,
+      shiny: 1 / Math.max(1, num("shiny", 20)),
+      bg: 1 / Math.max(1, num("bg", 5)),
+      hundo: 1 / Math.max(1, num("hundo", 216)),
+    };
+  }
+
+  const STATS = `<div class="stats"><div class="stat"><span class="k">At least 1</span><span class="v a"></span></div>
+                 <div class="stat"><span class="k">Expected</span><span class="v e"></span></div></div>`;
+
+  const OUTCOMES = [
+    ["Shundo + BG", 1, 1, 1],
+    ["Shundo, no BG", 1, 1, 0],
+    ["Hundo + BG (not shiny)", 0, 1, 1],
+    ["Hundo (not shiny, no BG)", 0, 1, 0],
+    ["Shiny + BG (not hundo)", 1, 0, 1],
+    ["Shiny (not hundo, no BG)", 1, 0, 0],
+    ["BG only", 0, 0, 1],
+    ["Nothing special", 0, 0, 0],
+  ];
+  const TOTALS = [["t1", "Any shiny", "shiny"], ["t2", "Any hundo", "hundo"], ["t3", "Any BG", "bg"]];
+
+  OUTCOMES.forEach(([name, sh, hu, bg]) => {
+    const li = document.createElement("li");
+    li.className = "item" + (sh ? " shiny" : hu ? " hundo" : bg ? " bgonly" : "");
+    const dots = (sh ? '<span class="dot s"></span>' : "") + (hu ? '<span class="dot h"></span>' : "") + (bg ? '<span class="dot b"></span>' : "");
+    li.innerHTML = `<div class="name">${dots}${name}</div>
+      <div class="odds"><span class="o"></span><small></small></div>${STATS}
+      <md-linear-progress class="bar" value="0"></md-linear-progress>`;
+    $("rows").appendChild(li);
+  });
+  TOTALS.forEach(([cls, name]) => {
+    const d = document.createElement("div");
+    d.className = "card total " + cls;
+    d.innerHTML = `<div class="name">${name}</div><div class="odds"></div>${STATS}`;
+    $("totals").appendChild(d);
+  });
+
+  function fillStats(el, p, n) {
+    const chance = atLeastOne(p, n);
+    el.querySelector(".a").textContent = fmtPct(chance);
+    el.querySelector(".e").textContent = fmtNum(p * n);
+    return chance;
+  }
+
+  function renderTable() {
+    const s = readSettings();
+    $("totalTries").textContent = s.n.toLocaleString("en-US");
+
+    [...$("rows").children].forEach((li, i) => {
+      const [, sh, hu, bg] = OUTCOMES[i];
+      const p = (sh ? s.shiny : 1 - s.shiny) * (hu ? s.hundo : 1 - s.hundo) * (bg ? s.bg : 1 - s.bg);
+      li.querySelector(".o").textContent = fmtOneIn(p);
+      li.querySelector("small").textContent = fmtPct(p);
+      const chance = fillStats(li, p, s.n);
+      const bar = li.querySelector(".bar");
+      bar.value = Math.max(chance, 0.012);
+      bar.setAttribute("aria-label", "Chance of at least one: " + fmtPct(chance));
+    });
+    [...$("totals").children].forEach((card, i) => {
+      const p = s[TOTALS[i][2]];
+      card.querySelector(".odds").textContent = fmtOneIn(p);
+      fillStats(card, p, s.n);
+    });
+
+    $("sChance").textContent = fmtPct(atLeastOne(s.shiny, s.n));
+    $("sExp").textContent = fmtNum(s.shiny * s.n);
+
+    document.querySelectorAll("[data-shiny]").forEach((b) => {
+      const on = parseFloat(b.dataset.shiny) === parseFloat(val($("shiny")));
+      b.toggleAttribute("data-selected", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+  }
+
+  ["accounts", "per", "shiny", "bg", "hundo"].forEach((id) => $(id).addEventListener("input", renderTable));
+  document.querySelectorAll("[data-shiny]").forEach((b) => {
+    b.addEventListener("click", () => { $("shiny").value = b.dataset.shiny; renderTable(); });
+  });
+
+
+  /* ---------- copy for Discord ---------- */
+  function discordText() {
+    const s = readSettings();
+    const bar = (c) => { const k = Math.round(c * 15); return "▰".repeat(k) + "▱".repeat(15 - k); };
+    const lines = [
+      "## Every result",
+      `-# ${s.n.toLocaleString("en-US")} ${s.n === 1 ? "try" : "tries"} · shiny ${fmtOneIn(s.shiny)} · hundo ${fmtOneIn(s.hundo)} · BG ${fmtOneIn(s.bg)}`,
+      "",
+    ];
+    /* Discord list is inclusive: emojis mean "has all of these", other traits ignored */
+    const combos = [];
+    for (let hu = 1; hu >= 0; hu--) for (let sh = 1; sh >= 0; sh--) for (let bg = 1; bg >= 0; bg--) {
+      if (!sh && !hu && !bg) continue;
+      combos.push({
+        name: (hu ? "💯" : "") + (sh ? "✨" : "") + (bg ? "🖼️" : ""),
+        p: (sh ? s.shiny : 1) * (hu ? s.hundo : 1) * (bg ? s.bg : 1),
+      });
+    }
+    combos.sort((a, b) => a.p - b.p); /* rarest first */
+    combos.forEach(({ name, p }) => {
+      const c = atLeastOne(p, s.n);
+      lines.push(`**${name}** · ${fmtOneIn(p)} (${fmtPct(p)})`,
+                 `${bar(c)} ${fmtPct(c)} | ${fmtNum(p * s.n)}`, "");
+    });
+    return lines.join("\n").trim();
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    return ok;
+  }
+  let copyTimer;
+  $("copyBtn").addEventListener("click", async () => {
+    const ok = await copyText(discordText());
+    $("copyLabel").textContent = ok ? "Copied!" : "Copy failed";
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { $("copyLabel").textContent = "Copy for Discord"; }, 1800);
+  });
+
+  /* ---------- multiply calculator ---------- */
+  function parseOdds(str) {
+    str = (str || "").trim().replace(",", ".");
+    if (!str) return null;
+    let p;
+    if (str.includes("/")) {
+      const [a, b] = str.split("/").map(parseFloat);
+      if (!(b > 0) || !(a >= 0)) return null;
+      p = a / b;
+    } else if (str.endsWith("%")) {
+      p = parseFloat(str) / 100;
+    } else {
+      const v = parseFloat(str);
+      if (!isFinite(v) || v <= 0) return null;
+      p = v >= 1 ? 1 / v : v;
+    }
+    return isFinite(p) && p > 0 && p <= 1 ? p : null;
+  }
+
+  const factorsEl = $("factors");
+  const refreshTimes = () =>
+    [...factorsEl.children].forEach((r, i) => r.querySelector(".times").classList.toggle("first", i === 0));
+
+  function addFactor(value) {
+    const row = document.createElement("div");
+    row.className = "factor";
+    row.innerHTML = `<span class="times" aria-hidden="true">×</span>
+      <md-outlined-text-field class="odds-in" label="Odds" type="text" value="${value || ""}" autocomplete="off"></md-outlined-text-field>
+      <md-icon-button aria-label="Remove these odds">
+        <md-icon><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></md-icon>
+      </md-icon-button>`;
+    row.querySelector("md-outlined-text-field").addEventListener("input", renderCalc);
+    row.querySelector("md-icon-button").addEventListener("click", () => {
+      if (factorsEl.children.length > 1) { row.remove(); refreshTimes(); renderCalc(); }
+    });
+    factorsEl.appendChild(row);
+    refreshTimes();
+    renderCalc();
+    if (!value) setTimeout(() => row.querySelector("md-outlined-text-field").focus(), 50);
+  }
+
+  function renderCalc() {
+    const parsed = [...factorsEl.querySelectorAll(".odds-in")].map((i) => parseOdds(val(i)));
+    const out = $("result");
+    if (parsed.some((p) => p === null)) {
+      out.innerHTML = `<span class="err">Fill in every box with odds like 1/20, 5% or 0.05.</span>`;
+      return;
+    }
+    const p = parsed.reduce((a, b) => a * b, 1);
+    const n = Math.max(1, Math.floor(parseFloat(val($("tries"))) || 1));
+    const t = `${n.toLocaleString("en-US")} ${n === 1 ? "try" : "tries"}`;
+    out.innerHTML = `
+      <div class="big">${fmtOneIn(p)}</div>
+      <div class="sub">per try, or ${fmtPct(p)}</div>
+      <div class="pills">
+        <div class="pill"><span class="k">At least 1 in ${t}</span><span class="v">${fmtPct(atLeastOne(p, n))}</span></div>
+        <div class="pill"><span class="k">Expected in ${t}</span><span class="v">${fmtNum(p * n)}</span></div>
+      </div>`;
+  }
+
+  $("addFactor").addEventListener("click", () => addFactor(""));
+  $("tries").addEventListener("input", renderCalc);
+  ["1/20", "1/5", "1/216"].forEach(addFactor);
+  renderTable();
+
+  /* Re-render once the Material Web fields are upgraded so their live values are used */
+  customElements.whenDefined("md-outlined-text-field").then(() => { renderTable(); renderCalc(); });
+</script>
+<script>
+  if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>
